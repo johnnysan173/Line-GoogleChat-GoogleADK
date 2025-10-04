@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinner Planner Bot Design Document</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font import for Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937; /* Dark background */
+            color: #f3f4f6; /* Light text */
+        }
+        .section-heading {
+            border-left: 4px solid #3b82f6; /* Blue accent border */
+        }
+        /* Custom styling for tables for better mobile readability */
+        .responsive-table th, .responsive-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #374151;
+        }
+        .responsive-table th {
+            background-color: #374151;
+        }
+        .flow-arrow {
+            color: #3b82f6; /* Blue arrow color */
+            font-weight: 700;
+            margin: 0 0.5rem;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-gray-800 p-6 sm:p-10 rounded-xl shadow-2xl">
+
+        <!-- Header -->
+        <header class="mb-10 pb-6 border-b border-gray-700">
+            <h1 class="text-4xl font-extrabold text-white mb-2">
+                Dinner Planner Bot
+            </h1>
+            <p class="text-xl text-blue-400">Simple Design Document</p>
+        </header>
+
+        <!-- 1. Overview and Purpose -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-white section-heading pl-3 mb-6">
+                1. Overview and Purpose
+            </h2>
+            <div class="bg-gray-700 p-6 rounded-lg shadow-inner">
+                <table class="w-full text-sm responsive-table rounded-lg overflow-hidden">
+                    <thead>
+                        <tr>
+                            <th class="rounded-tl-lg">Field</th>
+                            <th class="rounded-tr-lg">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Project Name</strong></td>
+                            <td>Dinner Planner Bot (Sequential)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Goal</strong></td>
+                            <td>Provide users with a complete dinner plan (idea, shopping list, and recipe) based on a text prompt (e.g., "fast dinner," "Chinese food").</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Core Technology</strong></td>
+                            <td><strong class="text-yellow-300">Google Agent Development Kit (ADK)</strong> for building a multi-step planning pipeline.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Integration Points</strong></td>
+                            <td><strong class="text-green-300">LINE Messenger</strong> and <strong class="text-green-300">Google Chat</strong> via webhooks.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. Architecture and Data Flow -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-white section-heading pl-3 mb-6">
+                2. Architecture and Data Flow
+            </h2>
+            <p class="text-gray-300 mb-4">
+                The application uses <strong class="text-blue-300">FastAPI</strong> as the web server and the <strong class="text-yellow-300">Google ADK</strong> for structured intelligence, following a standard Webhook <span class="flow-arrow">&rarr;</span> Core Logic <span class="flow-arrow">&rarr;</span> Response pattern.
+            </p>
+
+            <h3 class="text-xl font-medium text-white mb-3 mt-6">A. Execution Flow (User Query to Response)</h3>
+            <ol class="list-decimal list-inside space-y-3 bg-gray-700 p-6 rounded-lg shadow-inner text-gray-200">
+                <li><strong>Incoming Request:</strong> A user sends a message on LINE or Google Chat.</li>
+                <li><strong>Webhook:</strong> Request hits the appropriate FastAPI endpoint (<code class="bg-gray-600 px-1 rounded">/line-webhook</code> or <code class="bg-gray-600 px-1 rounded">/google-chat-webhook</code>).</li>
+                <li><strong>Session Management:</strong> The handler calls <code class="bg-gray-600 px-1 rounded">get_or_create_session()</code> to retrieve the user's conversation context.</li>
+                <li><strong>Agent Run:</strong> The query is passed to the <strong class="text-yellow-300">ADK <code class="bg-gray-600 px-1 rounded">Runner</code></strong>, which executes the <code class="bg-gray-600 px-1 rounded">dinner_pipeline</code>.</li>
+                <li><strong>Pipeline Execution:</strong> The sequential agent processes the steps: Idea <span class="flow-arrow">&rarr;</span> Shopping List <span class="flow-arrow">&rarr;</span> Recipe.</li>
+                <li><strong>Reply:</strong> The webhook handler sends the final text back to the user via the platform's API.</li>
+            </ol>
+        </section>
+
+        <!-- 3. Key Components -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-white section-heading pl-3 mb-6">
+                3. Key Components
+            </h2>
+
+            <div class="space-y-8">
+                <!-- A. Core Agents -->
+                <div class="p-6 bg-gray-700 rounded-lg shadow-xl">
+                    <h3 class="text-xl font-medium text-blue-400 mb-4">A. Core Agents (The Sequential Pipeline)</h3>
+                    <p class="text-gray-300 mb-4">
+                        The <code class="bg-gray-600 px-1 rounded">dinner_pipeline</code> uses three sequential agents to build the full recipe plan.
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm responsive-table">
+                            <thead>
+                                <tr>
+                                    <th>Step</th>
+                                    <th>Agent Name</th>
+                                    <th>Output Key</th>
+                                    <th>Role</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td><code class="text-yellow-300">IdeaAgent</code></td>
+                                    <td><code class="bg-gray-600 px-1 rounded">dish_name</code></td>
+                                    <td>Proposes a single, specific dish name based on the user's query.</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td><code class="text-yellow-300">ShoppingAgent</code></td>
+                                    <td><code class="bg-gray-600 px-1 rounded">shopping_list</code></td>
+                                    <td>Generates a 5-item shopping list using the <code class="bg-gray-600 px-1 rounded">dish_name</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td><code class="text-yellow-300">RecipeAgent</code></td>
+                                    <td>(Final Output)</td>
+                                    <td>Formats all gathered data into the final, comprehensive recipe response.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- B. Webhook Endpoints -->
+                <div class="p-6 bg-gray-700 rounded-lg shadow-xl">
+                    <h3 class="text-xl font-medium text-blue-400 mb-4">B. Webhook Endpoints</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm responsive-table">
+                            <thead>
+                                <tr>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>Purpose</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="bg-gray-600 px-1 rounded">/line-webhook</code></td>
+                                    <td>POST</td>
+                                    <td>Handles incoming messages from <strong>LINE</strong>. Validates signature and sends reply via Line API.</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="bg-gray-600 px-1 rounded">/google-chat-webhook</code></td>
+                                    <td>POST</td>
+                                    <td>Handles incoming messages from <strong>Google Chat</strong>. Returns a simple JSON response.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Configuration and Environment Variables -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-white section-heading pl-3 mb-6">
+                4. Configuration and Environment Variables
+            </h2>
+            <p class="text-gray-300 mb-4">
+                The application requires these variables to be loaded from the environment (e.g., a <code class="bg-gray-600 px-1 rounded">.env</code> file).
+            </p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Required?</th>
+                            <th>Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="bg-gray-600 px-1 rounded">ChannelSecret</code></td>
+                            <td class="text-green-400 font-bold">Yes</td>
+                            <td>Used for LINE webhook signature validation.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="bg-gray-600 px-1 rounded">ChannelAccessToken</code></td>
+                            <td class="text-green-400 font-bold">Yes</td>
+                            <td>Used to send reply messages via the LINE API.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="bg-gray-600 px-1 rounded">GOOGLE_API_KEY</code></td>
+                            <td class="text-green-400 font-bold">Yes (Conditional)</td>
+                            <td>Required for GenAI API access if <code class="bg-gray-600 px-1 rounded">USE_VERTEX</code> is not "True".</td>
+                        </tr>
+                        <tr>
+                            <td><code class="bg-gray-600 px-1 rounded">GOOGLE_GENAI_USE_VERTEXAI</code></td>
+                            <td class="text-red-400">No</td>
+                            <td>If set to "True", switches the ADK model access to use Vertex AI endpoints.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. Getting Started (Local Development) (NEW SECTION) -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-white section-heading pl-3 mb-6">
+                5. Getting Started (Local Development)
+            </h2>
+            <p class="text-gray-300 mb-4">
+                Follow these steps to set up and run the bot on your local machine for development and testing.
+            </p>
+            
+            <h3 class="text-xl font-medium text-blue-400 mb-4">A. Setup and Run</h3>
+
+            <div class="bg-gray-700 p-6 rounded-lg shadow-inner space-y-4">
+                <ol class="list-decimal list-inside space-y-3 text-gray-200">
+                    <li>
+                        <strong>Clone the Repository:</strong> Clone the project files to your local machine.
+                    </li>
+                    <li>
+                        <strong>Configure Environment Variables:</strong> Create a <code class="bg-gray-600 px-1 rounded">.env</code> file in the root directory and populate it with the required values listed in **Section 4**.
+                    </li>
+                    <li>
+                        <strong>Install Dependencies:</strong> Install the necessary Python libraries:
+                        <code class="block bg-gray-600 p-2 mt-1 rounded text-sm overflow-x-auto">pip install -r requirements.txt</code>
+                    </li>
+                    <li>
+                        <strong>Start the Server:</strong> Run the FastAPI application locally with auto-reload enabled:
+                        <code class="block bg-gray-600 p-2 mt-1 rounded text-sm overflow-x-auto">uvicorn main:app --reload</code>
+                        <p class="mt-2 text-sm text-gray-400">The server will typically run on <code class="bg-gray-600 px-1 rounded">http://127.0.0.1:8000</code>.</p>
+                    </li>
+                </ol>
+            </div>
+
+            <h3 class="text-xl font-medium text-blue-400 mb-4 mt-8">B. Local Webhook Testing (Ngrok)</h3>
+            <p class="text-gray-300 mb-4">
+                Since platforms like LINE and Google Chat require public URLs for their webhooks, you must use a tool like **Ngrok** to expose your local server to the internet during development.
+            </p>
+             <div class="bg-gray-700 p-6 rounded-lg shadow-inner space-y-4">
+                <ol class="list-decimal list-inside space-y-3 text-gray-200">
+                    <li>
+                        <strong>Install and Run Ngrok:</strong> Open a new terminal window and expose your local server port (default is 8000):
+                        <code class="block bg-gray-600 p-2 mt-1 rounded text-sm overflow-x-auto">ngrok http 8000</code>
+                    </li>
+                    <li>
+                        <strong>Obtain Public URL:</strong> Ngrok will provide a temporary public URL (e.g., <code class="bg-gray-600 px-1 rounded">https://xxxx.ngrok-free.app</code>).
+                    </li>
+                    <li>
+                        <strong>Set Webhooks:</strong> Use this temporary Ngrok URL as the base URL when configuring the LINE and Google Chat webhooks (see **Section 6**).
+                    </li>
+                </ol>
+            </div>
+        </section>
+        
+        <!-- 6. Deployment and Interface Configuration (RENAMED FROM 5) -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-white section-heading pl-3 mb-6">
+                6. Deployment and Interface Configuration
+            </h2>
+            <p class="text-gray-300 mb-4">
+                Once the FastAPI application is successfully deployed to a **stable, public server**, the URL must be registered with the respective messaging platforms to enable communication.
+            </p>
+            
+            <h3 class="text-xl font-medium text-blue-400 mb-4">A. Webhook Setup Steps (Production)</h3>
+
+            <div class="bg-gray-700 p-6 rounded-lg shadow-inner space-y-4">
+                <ol class="list-decimal list-inside space-y-3 text-gray-200">
+                    <li>
+                        <strong>Get Public URL:</strong> Obtain the public base URL of the deployed FastAPI application (e.g., <code class="bg-gray-600 px-1 rounded">https://your-app-domain.com</code>).
+                    </li>
+                    <li>
+                        <strong>Configure LINE Webhook:</strong> In the LINE Developer Console, set the webhook URL to the base URL plus the LINE endpoint:
+                        <code class="block bg-gray-600 p-2 mt-1 rounded text-sm overflow-x-auto">https://your-app-domain.com/line-webhook</code>
+                    </li>
+                    <li>
+                        <strong>Configure Google Chat Webhook:</strong> In the Google Chat application settings, set the webhook URL (or bot endpoint) to the base URL plus the Google Chat endpoint:
+                        <code class="block bg-gray-600 p-2 mt-1 rounded text-sm overflow-x-auto">https://your-app-domain.com/google-chat-webhook</code>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>
