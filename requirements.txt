@@ -4,4 +4,3 @@ uvicorn[standard]
 google-adk
 pydantic
 tiktoken
-Pillow
